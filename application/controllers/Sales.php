@@ -31,13 +31,11 @@ class Sales extends Secure_Controller
 		}
 		else
 		{
+            
 			$data['table_headers'] = get_sales_manage_table_headers();
-
-			$data['filters'] = array('only_cash' => $this->lang->line('sales_cash_filter'),
-				'only_due' => $this->lang->line('sales_due_filter'),
-				'only_check' => $this->lang->line('sales_check_filter'),
-				'only_creditcard' => $this->lang->line('sales_credit_filter'),
-				'only_invoices' => $this->lang->line('sales_invoice_filter'));
+            
+            $sale = get_instance()->Sale;
+			$data['filters'] =$sale->get_payment_types();
 
 			$this->load->view('sales/manage', $data);
 		}
