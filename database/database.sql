@@ -333,6 +333,7 @@ CREATE TABLE IF NOT EXISTS `ospos_item_quantities` (
   `item_id` int(11) NOT NULL,
   `location_id` int(11) NOT NULL,
   `quantity` decimal(15,3) NOT NULL DEFAULT '0',
+  `selling_price` decimal(15,2) NOT NULL DEFAULT '0',
   PRIMARY KEY (`item_id`,`location_id`),
   KEY `item_id` (`item_id`),
   KEY `location_id` (`location_id`)
