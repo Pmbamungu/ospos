@@ -12,6 +12,8 @@ class Login extends CI_Controller
 		}
 		else
 		{
+            $this->load->model('Employee');
+           $data['users'] = $this->Employee->get_all_users();
 			$this->form_validation->set_error_delimiters('<div class="error">', '</div>');
 
 			$this->form_validation->set_rules('username', 'lang:login_username', 'required|callback_login_check');

@@ -26,7 +26,14 @@ class Employee extends Person
 
 		return ($this->db->get()->num_rows() == 1);
 	}
-
+    
+    public function get_all_users()
+	{
+		$this->db->select('username'); // add avatar if you want image
+		$this->db->from('employees');
+		$this->db->where('deleted', 0);
+		return $this->db->get()->result();
+	}
 	/*
 	Gets total of rows
 	*/
