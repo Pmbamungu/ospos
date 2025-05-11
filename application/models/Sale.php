@@ -68,7 +68,23 @@ class Sale extends CI_Model
 
 		return $this->db->get();
 	}
+    public function get_payment_types()
+	{
+		$this->db->select('pay_mode');
+		$this->db->from('ospos_payment_types');
+		$this->db->where('status', 1); // Only active
+        $this->db->order_by('pay_mode');
+        
+		$result = $this->db->get()->result_array();
+        
+		$payment_types = [];
+        
+		foreach ($result as $row) {
+			$payment_types[$row['pay_mode']] = $row['pay_mode'];
+		}
 
+           return $payment_types;
+	}
 	/**
 	 * Get number of rows for the takings (sales/manage) view
 	 */

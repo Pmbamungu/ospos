@@ -121,6 +121,40 @@ INSERT INTO `ospos_app_config` (`key`, `value`) VALUES
 ('allow_duplicate_barcodes', '0'),
 ('quote_default_comments', 'This is a default quote comment');
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ospos_payment_types`
+--
+
+
+
+
+DROP TABLE IF EXISTS `ospos_payment_types`;
+
+CREATE TABLE `ospos_payment_types` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `pay_mode` varchar(50) NOT NULL,
+  `description` varchar(100) DEFAULT NULL,
+  `status` decimal(10,0) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`)
+);
+
+--
+-- Dumping data for table `ospos_payment_types`
+--
+insert  into `ospos_payment_types`(`id`,`pay_mode`,`description`,`status`) values 
+(2,'Cash','Cash',1),
+(3,'Credit Card','Credit Card',1),
+(4,'Debit Card','Debit Card',1),
+(5,'Mpesa(Till)','Mpesa(Till)',1),
+(6,'Mpesa(Paybill)','Mpesa(Paybill)',1),
+(7,'Mpesa(Send Money)','Mpesa(Send Money)',1),
+(8,'Cheque','Cheque',1),
+(9,'Gift Card','Gift Card',1),
+(10,'Reward Points','Reward Points',1),
+(5,'Mpesa(Withdraw)','Mpesa(Withdraw)',1),
+(11,'Due','Due',1);
 
 -- --------------------------------------------------------
 
@@ -1010,3 +1044,4 @@ ALTER TABLE `ospos_customers_points`
 --
 ALTER TABLE `ospos_sales_reward_points`
  ADD CONSTRAINT `ospos_sales_reward_points_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `ospos_sales` (`sale_id`);
+
