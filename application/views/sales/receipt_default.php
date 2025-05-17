@@ -221,6 +221,10 @@
 	</table>
 
 	<div id="sale_return_policy">
+        <h5>
+            <div><?php echo nl2br($this->config->item('payment_message')); ?></div>
+            <div style='padding:4%;'><?php echo empty($comments) ? '' : $this->lang->line('sales_comments') . ': ' . $comments; ?></div>
+        </h5>
 		<?php echo nl2br($this->config->item('return_policy')); ?>
 	</div>
 
