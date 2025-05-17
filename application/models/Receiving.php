@@ -51,14 +51,61 @@ class Receiving extends CI_Model
 
 		return ($this->db->get()->num_rows() == 1);
 	}
-
-	public function update($receiving_data, $receiving_id)
+	public function get_receivings($filters = [])
 	{
-		$this->db->where('receiving_id', $receiving_id);
+    $this->db->select('receivings.receiving_id, receivings.total, 
+                      COALESCE(SUM(receivings_payments.payment_amount), 0) AS amount_paid, 
+                      (receivings.total - COALESCE(SUM(receivings_payments.payment_amount), 0)) AS balance');
+    $this->db->from('receivings AS receivings');
+    $this->db->join('receivings_payments AS receivings_payments', 'receivings.receiving_id = receivings_payments.receiving_id', 'left');
+    $this->db->group_by('receivings.receiving_id');
 
-		return $this->db->update('receivings', $receiving_data);
+    return $this->db->get()->result();
 	}
 
+    public function save_payment($payment_data)
+	{
+		foreach ($payment_data as $payment) {
+			$data = [
+            'receiving_id'   => $payment['receiving_id'],
+            'payment_type'   => $payment['payment_type'],
+            'payment_amount' => $payment['payment_amount'],
+            'comments'       => $payment['comments'],
+            'employee_id'    => $payment['employee_id']
+        ];
+		return 	$this->db->insert('receivings_payments', $data);
+		}
+	}
+	public function update($receiving_data, $receiving_id,$payments)
+	{
+		 // Start Transaction
+		$this->db->trans_start();
+		
+		$this->db->where('receiving_id', $receiving_id);
+		$this->db->update('receivings', $receiving_data);
+		
+		
+		
+		// Insert new payment records
+    foreach ($payments as $payment) {
+        $payment_data = [
+            'receiving_id'   => $receiving_id,
+            'payment_type'   => $payment['payment_type'],
+            'payment_amount' => $payment['payment_amount'],
+            'comments'       => $payment['comments'],
+            'employee_id'    => $payment['employee_id']
+        ];
+		// update existing payments for this receiving_id (to avoid duplicate records)
+		$this->db->where('receiving_id', $receiving_id);
+		//$this->db->update('receivings_payments');
+        $this->db->update('receivings_payments',$payment);
+		}
+		// Complete Transaction
+		$this->db->trans_complete();
+	
+		// Return status (TRUE if successful, FALSE otherwise)
+		return $this->db->trans_status();
+	}
 	public function save($items, $supplier_id, $employee_id, $comment, $reference, $payment_type, $receiving_id = FALSE)
 	{
 		if(count($items) == 0)
@@ -77,10 +124,13 @@ class Receiving extends CI_Model
 
 		//Run these queries as a transaction, we want to make sure we do all or nothing
 		$this->db->trans_start();
-
+		
+		//insert receivings record
 		$this->db->insert('receivings', $receivings_data);
+		
 		$receiving_id = $this->db->insert_id();
-
+        
+		//Insert items into receiving_items;
 		foreach($items as $line=>$item)
 		{
 			$cur_item_info = $this->Item->get_info($item['item_id']);
@@ -95,8 +145,8 @@ class Receiving extends CI_Model
 				'receiving_quantity' => $item['receiving_quantity'],
 				'discount' => $item['discount'],
 				'discount_type' => $item['discount_type'],
-				'item_cost_price' => $cur_item_info->cost_price,
-				'item_unit_price' => $item['price'],
+				'item_cost_price' =>$cur_item_info->cost_price,
+				'item_unit_price' =>$item['selling_price'],//$cur_item_info->unit_price,//$CI->Item->get_item_location_price($item->item_id,$loc), //$item['price'],
 				'item_location' => $item['item_location']
 			);
 
@@ -113,7 +163,7 @@ class Receiving extends CI_Model
 			//Update stock quantity
 			$item_quantity = $this->Item_quantity->get_item_quantity($item['item_id'], $item['item_location']);
 			$this->Item_quantity->save(array('quantity' => $item_quantity->quantity + $items_received, 'item_id' => $item['item_id'],
-											  'location_id' => $item['item_location']), $item['item_id'], $item['item_location']);
+											  'location_id' => $item['item_location'],'selling_price' => $item['selling_price']), $item['item_id'], $item['item_location']);
 
 			$recv_remarks = 'RECV ' . $receiving_id;
 			$inv_data = array(
@@ -132,6 +182,7 @@ class Receiving extends CI_Model
 			$supplier = $this->Supplier->get_info($supplier_id);
 		}
 
+        
 		$this->db->trans_complete();
 
 		if($this->db->trans_status() === FALSE)

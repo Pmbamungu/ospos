@@ -1513,6 +1513,9 @@ class Reports extends Secure_Controller
 
 		foreach($report_data['summary'] as $key => $row)
 		{
+			$paid=$model->get_total_payments($row['receiving_id'])>0?$model->get_total_payments($row['receiving_id']):$row['total'];
+			$payment_balance=($row['total']-$paid);
+			$paymode=$model->get_payment_mode($row['receiving_id']);
 			$summary_data[] = $this->xss_clean(array(
 				'id' => $row['receiving_id'],
 				'receiving_time' => to_datetime(strtotime($row['receiving_time'])),
@@ -1520,8 +1523,10 @@ class Reports extends Secure_Controller
 				'employee_name' => $row['employee_name'],
 				'supplier_name' => $row['supplier_name'],
 				'total' => to_currency($row['total']),
+				'paid'=> to_currency($paid),
+				'balance'=> to_currency($payment_balance),
 				'profit' => to_currency($row['profit']),
-				'payment_type' => $row['payment_type'],
+				'payment_type' =>$paymode?$paymode:$row['payment_type'],
 				'reference' => $row['reference'],
 				'comment' => $row['comment'],
 				'edit' => anchor('receivings/edit/' . $row['receiving_id'], '<span class="glyphicon glyphicon-edit"></span>',

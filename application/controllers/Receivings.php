@@ -109,7 +109,7 @@ class Receivings extends Secure_Controller
 		{
 			$data['error'] = $this->lang->line('receivings_unable_to_add_item');
 		}
-
+        
 		$this->_reload($data);
 	}
 
@@ -118,12 +118,14 @@ class Receivings extends Secure_Controller
 		$data = array();
 
 		$this->form_validation->set_rules('price', 'lang:items_price', 'required|callback_numeric');
+		$this->form_validation->set_rules('selling_price', 'lang:items_price', 'required|callback_numeric');
 		$this->form_validation->set_rules('quantity', 'lang:items_quantity', 'required|callback_numeric');
 		$this->form_validation->set_rules('discount', 'lang:items_discount', 'required|callback_numeric');
 
 		$description = $this->input->post('description');
 		$serialnumber = $this->input->post('serialnumber');
 		$price = parse_decimals($this->input->post('price'));
+		$selling_price = parse_decimals($this->input->post('selling_price'));
 		$quantity = parse_quantity($this->input->post('quantity'));
 		$discount_type = $this->input->post('discount_type');
 		$discount = $discount_type ? parse_quantity($this->input->post('discount')) : parse_decimals($this->input->post('discount'));
@@ -132,7 +134,7 @@ class Receivings extends Secure_Controller
 
 		if($this->form_validation->run() != FALSE)
 		{
-			$this->receiving_lib->edit_item($item_id, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $receiving_quantity);
+			$this->receiving_lib->edit_item($item_id, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $receiving_quantity,$selling_price);
 		}
 		else
 		{
@@ -162,7 +164,7 @@ class Receivings extends Secure_Controller
 		$data['selected_supplier_name'] = !empty($receiving_info['supplier_id']) ? $receiving_info['company_name'] : '';
 		$data['selected_supplier_id'] = $receiving_info['supplier_id'];
 		$data['receiving_info'] = $receiving_info;
-	
+	    $data['payment_options'] = $this->Receiving->get_payment_options();
 		$this->load->view('receivings/form', $data);
 	}
 
@@ -212,7 +214,8 @@ class Receivings extends Secure_Controller
 		$data['stock_location'] = $this->receiving_lib->get_stock_source();
 		if($this->input->post('amount_tendered') != NULL)
 		{
-			$data['amount_tendered'] = $this->input->post('amount_tendered');
+			//$data['amount_tendered'] = $this->input->post('amount_tendered')??0;
+			$data['amount_tendered'] = $this->input->post('amount_tendered') ? $this->input->post('amount_tendered') : 0;
 			$data['amount_change'] = to_currency($data['amount_tendered'] - $data['total']);
 		}
 		
@@ -240,9 +243,29 @@ class Receivings extends Secure_Controller
 			}
 		}
 
+       
 		//SAVE receiving to database
-		$data['receiving_id'] = 'RECV ' . $this->Receiving->save($data['cart'], $supplier_id, $employee_id, $data['comment'], $data['reference'], $data['payment_type'], $data['stock_location']);
-
+		 $receiving_id=  $this->Receiving->save($data['cart'], $supplier_id, $employee_id, $data['comment'], $data['reference'], $data['payment_type'], $data['stock_location']);
+		
+		$data['receiving_id']='RECV ' .$receiving_id;
+		
+		// Insert payments
+        if ($receiving_id > 0) {
+			//
+            $payment_data  = [
+                [
+                    'receiving_id' => $receiving_id,
+                    'payment_type' => $data['payment_type'],
+                    'payment_amount' => $data['amount_tendered'],
+                    'comments' => $data['comment'],
+                    'employee_id' => $employee_id
+                ]
+            ];
+			//var_dump($payment_data); die();
+           $this->Receiving->save_payment($payment_data);
+        }
+		
+		
 		$data = $this->xss_clean($data);
 
 		if($data['receiving_id'] == 'RECV -1')
@@ -385,11 +408,23 @@ class Receivings extends Secure_Controller
 			'supplier_id' => $this->input->post('supplier_id') ? $this->input->post('supplier_id') : NULL,
 			'employee_id' => $this->input->post('employee_id'),
 			'comment' => $this->input->post('comment'),
+			'payment_type' => $this->input->post('payment_type'),
 			'reference' => $this->input->post('reference') != '' ? $this->input->post('reference') : NULL
 		);
+		
+		$payment_data  = [
+                [
+                    'receiving_id' => $receiving_id,
+                    'payment_type' => $receiving_data['payment_type'],
+                    'payment_amount' => $this->input->post('amount_tendered'),
+                    'comments' => $receiving_data['comment'],
+                    'employee_id' => $receiving_data['employee_id']
+                ]
+            ];
 
 		$this->Inventory->update('RECV '.$receiving_id, ['trans_date' => $receiving_time]);
-		if($this->Receiving->update($receiving_data, $receiving_id))
+		
+		if($this->Receiving->update($receiving_data, $receiving_id,$payment_data))
 		{
 			echo json_encode(array('success' => TRUE, 'message' => $this->lang->line('receivings_successfully_updated'), 'id' => $receiving_id));
 		}
@@ -402,6 +437,71 @@ class Receivings extends Secure_Controller
 	public function cancel_receiving()
 	{
 		$this->receiving_lib->clear_all();
+
+		$this->_reload();
+	}
+	
+	// Multiple Payments
+	public function add_payment()
+	{
+		$data = array();
+
+		$payment_type = $this->input->post('payment_type');
+	
+		if($payment_type !== $this->lang->line('sales_giftcard'))
+		{
+			$this->form_validation->set_rules('amount_tendered', 'lang:sales_amount_tendered', 'trim|required|callback_numeric');
+		}
+		else
+		{
+			$this->form_validation->set_rules('amount_tendered', 'lang:sales_amount_tendered', 'trim|required');
+		}
+		
+		if($this->form_validation->run() == FALSE)
+		{
+			if($payment_type === $this->lang->line('sales_giftcard'))
+			{
+				$data['error'] = $this->lang->line('sales_must_enter_numeric_giftcard');
+			}
+			else
+			{
+				$data['error'] = $this->lang->line('sales_must_enter_numeric');
+			}
+		}
+		else
+		{
+			
+			if($payment_type === $this->lang->line('sales_cash'))
+			{
+				$amount_due = $this->receiving_lib->get_total();
+				$sales_total = $this->receiving_lib->get_total();
+
+				$amount_tendered = $this->input->post('amount_tendered');
+				$this->sale_lib->add_payment($payment_type, $amount_tendered);
+				$cash_adjustment_amount = $amount_due - $sales_total;
+				if($cash_adjustment_amount <> 0)
+				{
+					$this->session->set_userdata('cash_mode', CASH_MODE_TRUE);
+					$this->sale_lib->add_payment($this->lang->line('sales_cash_adjustment'), $cash_adjustment_amount, CASH_ADJUSTMENT_TRUE);
+				}
+				
+				
+			}
+			else
+			{
+				$amount_tendered = $this->input->post('amount_tendered');
+					
+				$this->sale_lib->add_payment($payment_type, $amount_tendered);
+			}
+		}
+		
+		$this->_reload($data);
+	}
+
+	// Multiple Payments
+	public function delete_payment($payment_id)
+	{
+		$this->sale_lib->delete_payment($payment_id);
 
 		$this->_reload();
 	}

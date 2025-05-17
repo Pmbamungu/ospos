@@ -324,7 +324,7 @@ $(document).ready(function()
 	}
 	else
 	{
-		$("input[id*='margin'], #print_footer, #print_header, #receipt_printer, #invoice_printer, #takings_printer, #print_silently").prop('disabled', true);
+		$("input[id*='margin'], #print_footer, #print_header, #receipt_printer, #invoice_printer, #takings_printer, #print_silently").prop('disabled', false);
 		$("#receipt_printer, #invoice_printer, #takings_printer").each(function()
 		{
 			$(this).append($('<option>', {value : 'na'}).text('N/A'));

@@ -109,7 +109,8 @@ if(isset($success))
 				<th style="width: 5%; "><?php echo $this->lang->line('common_delete'); ?></th>
 				<th style="width: 15%;"><?php echo $this->lang->line('sales_item_number'); ?></th>
 				<th style="width: 30%;"><?php echo $this->lang->line('sales_item_name'); ?></th>
-				<th style="width: 10%;"><?php echo $this->lang->line('sales_price'); ?></th>
+				 <th style="width: 30%;"><?php echo 'Buying price'; ?></th>
+				<th style="width: 10%;"><?php echo 'Selling price'; ?></th>
 				<th style="width: 10%;"><?php echo $this->lang->line('sales_quantity'); ?></th>
 				<th style="width: 15%;"><?php echo $this->lang->line('sales_discount'); ?></th>
 				<th style="width: 10%;"><?php echo $this->lang->line('sales_total'); ?></th>
@@ -165,7 +166,9 @@ if(isset($success))
 							<?php
 							}
 							?>
-
+                            <td>
+                               <?php echo $item['cost_price']*$item['quantity'];?>
+                            </td>
 							<td>
 								<?php
 								if($items_module_allowed && $change_price)

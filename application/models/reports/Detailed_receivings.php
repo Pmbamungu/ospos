@@ -9,7 +9,53 @@ class Detailed_receivings extends Report
 		//Create our temp tables to work with the data in our report
 		$this->Receiving->create_temp_table($inputs);
 	}
+    public function get_total_payments($receiving_id)
+    {
+        // Check if receiving_id exists
+        $this->db->from('receivings_payments');
+        $this->db->where('receiving_id', $receiving_id);
+        $exists = $this->db->count_all_results();
 
+        if ($exists == 0) {
+            return 0; // Return null if receiving_id doesn't exist
+        }
+
+        // Fetch total sum if receiving_id exists
+        $this->db->select('SUM(payment_amount) as total_amount');
+        $this->db->from('receivings_payments');
+        $this->db->where('receiving_id', $receiving_id);
+        $this->db->where_in('payment_type', ['Cash', 'Cheque', 'Mpesa', 'Debit Card']);
+
+        $query = $this->db->get();
+		
+        return  $query->row()->total_amount;// ? $query->row()->total_amount: 0; // Return 0 if no result
+    }
+	public function get_payment_mode($receiving_id)
+	{
+    // Query to get the distinct payment type for the given receiving_id
+    $this->db->select('payment_type');  // Get distinct payment modes
+    $this->db->from('receivings_payments');
+    $this->db->where('receiving_id', $receiving_id);
+    $this->db->limit(1);  // Only fetch one entry
+
+    // Execute the query
+    $query = $this->db->get();
+
+    // Debugging: Output the last query to help with troubleshooting
+    log_message('debug', 'Last Query: ' . $this->db->last_query());
+
+    // Check if the query was successful and if any rows were returned
+    if ($query && $query->num_rows() > 0) {
+        // Return the first row's payment_type
+        return $query->row()->payment_type;
+    }
+
+    // If no results, log that no data was found for the given receiving_id
+    log_message('debug', "No payment type found for receiving_id: $receiving_id");
+
+    // Return null if no results were found
+    return null;
+	}
 	public function getDataColumns()
 	{
 		return array(
@@ -20,6 +66,8 @@ class Detailed_receivings extends Report
 				array('employee_name' => $this->lang->line('reports_received_by')),
 				array('supplier_name' => $this->lang->line('reports_supplied_by')),
 				array('total' => $this->lang->line('reports_total'), 'sorter' => 'number_sorter'),
+				array('paid' => 'Paid'),
+				array('balance' => 'Balance'),
 				array('payment_type' => $this->lang->line('reports_payment_type')),
 				array('comment' => $this->lang->line('reports_comments')),
 				array('reference' => $this->lang->line('receivings_reference'))),

@@ -20,4 +20,4 @@
 	?>
 </div>
 
-<?php $this->load->view("partial/footer"); ?>
+<!--<?php $this->load->view("partial/footer"); ?>-->

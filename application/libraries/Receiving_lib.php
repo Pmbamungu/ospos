@@ -209,6 +209,7 @@ class Receiving_lib
 		$item_info = $this->CI->Item->get_info($item_id,$item_location);
 		//array records are identified by $insertkey and item_id is just another field.
 		$price = $price != NULL ? $price : $item_info->cost_price;
+		$selling_price=$this->CI->Item->get_item_location_price($item_id,$item_location);//$item_info->unit_price
 
 		if($this->CI->config->item('multi_pack_enabled') == '1')
 		{
@@ -251,6 +252,7 @@ class Receiving_lib
 				'discount_type' => $discount_type,
 				'in_stock' => $this->CI->Item_quantity->get_item_quantity($item_id, $item_location)->quantity,
 				'price' => $price,
+				'selling_price' => $selling_price,
 				'receiving_quantity' => $receiving_quantity,
 				'receiving_quantity_choices' => $receiving_quantity_choices,
 				'total' => $this->get_item_total($quantity, $price, $discount, $discount_type, $receiving_quantity)
@@ -274,7 +276,7 @@ class Receiving_lib
 		return TRUE;
 	}
 
-	public function edit_item($line, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $receiving_quantity)
+	public function edit_item($line, $description, $serialnumber, $quantity, $discount, $discount_type, $price, $receiving_quantity,$selling_price)
 	{
 		$items = $this->get_cart();
 		if(isset($items[$line]))
@@ -290,6 +292,8 @@ class Receiving_lib
 				$line['discount_type'] = $discount_type;
 			}
 			$line['price'] = $price;
+			$line['item'].$selling_price=$selling_price;
+			$line['selling_price'] = $selling_price;
 			$line['total'] = $this->get_item_total($quantity, $price, $discount, $discount_type, $receiving_quantity);
 			$this->set_cart($items);
 		}
@@ -377,7 +381,21 @@ class Receiving_lib
 
 		return bcsub($total, $discount_amount);
 	}
+	// Multiple Payments
+	public function get_payments()
+	{
+		if(!$this->CI->session->userdata('receivings_payments'))
+		{
+			$this->set_payments(array());
+		}
 
+		return $this->CI->session->userdata('receivings_payments');
+	}
+	// Multiple Payments
+	public function set_payments($receivings_payments_data)
+	{
+		$this->CI->session->set_userdata('receivings_payments', $receivings_payments_data);
+	}
 	public function get_total()
 	{
 		$total = 0;

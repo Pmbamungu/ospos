@@ -1,3 +1,4 @@
+
 <div id="required_fields_message"><?php echo $this->lang->line('common_fields_required_message'); ?></div>
 
 <ul id="error_message_box" class="error_message_box"></ul>
@@ -201,6 +202,7 @@
 			</div>
 		</div>
 
+
 		<?php
 		if(!$use_destination_based_tax)
 		{
@@ -291,9 +293,11 @@
 		<?php
 		foreach($stock_locations as $key=>$location_detail)
 		{
-		?>
-			<div class="form-group form-group-sm">
-				<?php echo form_label($this->lang->line('items_quantity').' '.$location_detail['location_name'], 'quantity_' . $key, array('class'=>'required control-label col-xs-3')); ?>
+            //global$CI;
+            //$location_id = $CI->Stock_location->get_location_id($location_detail['location_name']);
+            ?>
+			<div class="form-group form-group-sm" style="border: 1px solid grey;padding: 10px;margin: 10px;padding-left:3px !important;">
+				<?php echo form_label('Quantity at '.$location_detail['location_name'], 'quantity_' . $key, array('class'=>'required control-label col-xs-8')); ?>
 				<div class='col-xs-4'>
 					<?php echo form_input(array(
 							'name'=>'quantity_' . $key,
@@ -303,6 +307,27 @@
 							'value'=>isset($item_info->item_id) ? to_quantity_decimals($location_detail['quantity']) : to_quantity_decimals(0))
 							);?>
 				</div>
+                <br><br><br>
+                <?php echo form_label('Selling price at '.$location_detail['location_name'], 'selling_price_' . $key, array('class'=>'required control-label col-xs-8')); ?>
+
+                <div class="input-group input-group-sm">
+                    <?php if (!currency_side()): ?>
+                        <span class="input-group-addon input-sm"><b><?php echo $this->config->item('currency_symbol'); ?></b></span>
+                    <?php endif; ?>
+                    <?php echo form_input(array(
+                            'name'=>'sellingprice_'.$key,
+                            'id'=>'sellingprice_'.$key,
+                            'class'=>'required selling_price form-control input-sm',
+                            'onClick'=>'this.select();',
+                            'value'=>isset($location_detail['selling_price']) ? parse_decimals($location_detail['selling_price']) : parse_decimals(0))
+                    );?>
+
+
+                   <!-- <?php echo $location_detail['selling_price'].$key; ?>-->
+                    <?php if (currency_side()): ?>
+                        <span class="input-group-addon input-sm"><b><?php echo $this->config->item('currency_symbol'); ?></b></span>
+                    <?php endif; ?>
+                </div>
 			</div>
 		<?php
 		}
@@ -499,6 +524,12 @@ $(document).ready(function()
 		select: fill_value,
 		focus: fill_value
 	});
+	
+	    $('#name').autocomplete({
+		source: "<?php echo site_url('items/suggest_item');?>",
+		delay: 10,
+		appendTo: '.modal-content'
+	});
 
 	$('#category').autocomplete({
 		source: "<?php echo site_url('items/suggest_category');?>",
@@ -587,6 +618,7 @@ $(document).ready(function()
 						remote: "<?php echo site_url($controller_name . '/check_numeric')?>"
 					},
 				<?php
+
 				}
 				?>
 				receiving_quantity:
@@ -624,6 +656,7 @@ $(document).ready(function()
 				<?php
 				foreach($stock_locations as $key=>$location_detail)
 				{
+
 				?>
 				<?php echo 'quantity_' . $key ?>:
 					{

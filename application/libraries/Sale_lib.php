@@ -15,6 +15,7 @@ class Sale_lib
 		$this->CI =& get_instance();
 		$this->CI->load->library('tax_lib');
 		$this->CI->load->model('enums/Rounding_mode');
+		$this->CI->load->model('Item');
 	}
 
 	public function get_line_sequence_options()
@@ -746,6 +747,7 @@ class Sale_lib
 
 	public function add_item(&$item_id, $quantity = 1, $item_location, &$discount = 0.0, $discount_type = 0, $price_mode = PRICE_MODE_STANDARD, $kit_price_option = NULL, $kit_print_option = NULL, $price_override = NULL, $description = NULL, $serialnumber = NULL, $sale_id = NULL, $include_deleted = FALSE, $print_option = NULL, $line = NULL)
 	{
+		global $CI;
 		$item_info = $this->CI->Item->get_info_by_id_or_number($item_id, $include_deleted);
 		//make sure item exists
 		if(empty($item_info))
@@ -759,7 +761,7 @@ class Sale_lib
 		$item_type = $item_info->item_type;
 		$stock_type = $item_info->stock_type;
 
-		$price = $item_info->unit_price;
+		$price =$CI->Item->get_item_location_price($item_info->item_id,$item_location);
 		$cost_price = $item_info->cost_price;
 		if($price_override != NULL)
 		{

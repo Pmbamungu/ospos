@@ -106,6 +106,7 @@ if (isset($success))
 				<th style="width:15%;"><?php echo $this->lang->line('sales_item_number'); ?></th>
 				<th style="width:23%;"><?php echo $this->lang->line('receivings_item_name'); ?></th>
 				<th style="width:10%;"><?php echo $this->lang->line('receivings_cost'); ?></th>
+				<th style="width:10%;"><?php echo 'Unit Retail Price'; ?></th>
 				<th style="width:8%;"><?php echo $this->lang->line('receivings_quantity'); ?></th>
 				<th style="width:10%;"><?php echo $this->lang->line('receivings_ship_pack'); ?></th>
 				<th style="width:14%;"><?php echo $this->lang->line('receivings_discount'); ?></th>
@@ -128,6 +129,7 @@ if (isset($success))
 			}
 			else
 			{
+				//echo json_encode($cart, JSON_PRETTY_PRINT);
 				foreach(array_reverse($cart, TRUE) as $line=>$item)
 				{
 			?>
@@ -157,6 +159,24 @@ if (isset($success))
 							<?php
 							}
 							?>
+
+                            <?php
+                            if ($items_module_allowed && $mode =='receive')
+                            {
+                                ?>
+                                <td><?php echo form_input(array('name'=>'selling_price', 'class'=>'form-control input-sm', 'value'=>to_currency_no_money($item['selling_price']),'onClick'=>'this.select();'));?></td>
+                                <?php
+                            }
+                            else
+                            {
+                                ?>
+                                <td>
+                                    <?php echo $item['selling_price']; ?>
+                                    <?php echo form_hidden('selling_price', to_currency_no_money($item['selling_price'])); ?>
+                                </td>
+                                <?php
+                            }
+                            ?>
 							
 							<td><?php echo form_input(array('name'=>'quantity', 'class'=>'form-control input-sm', 'value'=>to_quantity_decimals($item['quantity']),'onClick'=>'this.select();')); ?></td>
 							<td><?php echo form_dropdown('receiving_quantity', $item['receiving_quantity_choices'], $item['receiving_quantity'], array('class'=>'form-control input-sm'));?></td>
@@ -380,7 +400,7 @@ if (isset($success))
 									<tr>
 										<td><?php echo $this->lang->line('sales_amount_tendered'); ?></td>
 										<td>
-											<?php echo form_input(array('name'=>'amount_tendered', 'value'=>'', 'class'=>'form-control input-sm', 'size'=>'5')); ?>
+											<?php echo form_input(array('name'=>'amount_tendered', 'value'=>isset($total) ? $total : '', 'class'=>'form-control input-sm', 'readonly' => 'readonly', 'size'=>'5')); ?>
 										</td>
 									</tr>
 								</table>
@@ -529,7 +549,7 @@ $(document).ready(function()
 		}
 	}
 
-	$('[name="price"],[name="quantity"],[name="receiving_quantity"],[name="discount"],[name="description"],[name="serialnumber"]').change(function() {
+	$('[name="price"],[name="selling_price"],[name="quantity"],[name="receiving_quantity"],[name="discount"],[name="description"],[name="serialnumber"]').change(function() {
 		$(this).parents("tr").prevAll("form:first").submit()
 	});
 

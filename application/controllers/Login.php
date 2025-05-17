@@ -18,10 +18,7 @@ class Login extends CI_Controller
 
 			if($this->form_validation->run() == FALSE)
 			{
-                $this->load->model('Employee');
-                $data['users'] = $this->Employee->get_all_users();
-            
-				$this->load->view('login',$data);
+				$this->load->view('login');
 			}
 			else
 			{

@@ -14,9 +14,9 @@ class Item_quantity extends CI_Model
 
         return ($this->db->get()->num_rows() == 1);
     }
-
     public function save($location_detail, $item_id, $location_id)
     {
+        //$location_detail['selling_price']=100.00;
         if(!$this->exists($item_id, $location_id))
         {
             return $this->db->insert('item_quantities', $location_detail);
@@ -26,6 +26,28 @@ class Item_quantity extends CI_Model
         $this->db->where('location_id', $location_id);
 
         return $this->db->update('item_quantities', $location_detail);
+    }
+    public function get_item_price($item_id, $location_id)
+    {
+        $this->db->from('item_quantities');
+        $this->db->where('item_id', $item_id);
+        $this->db->where('location_id', $location_id);
+        $result = $this->db->get()->row();
+        if(empty($result) == TRUE)
+        {
+            //Get empty base parent object, as $item_id is NOT an item
+            $result = new stdClass();
+
+            //Get all the fields from items table (TODO to be reviewed)
+            foreach($this->db->list_fields('item_quantities') as $field)
+            {
+                $result->$field = '';
+            }
+
+            $result->quantity = 0;
+        }
+
+        return $result;
     }
 
     public function get_item_quantity($item_id, $location_id)

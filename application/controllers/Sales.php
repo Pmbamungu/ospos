@@ -31,11 +31,16 @@ class Sales extends Secure_Controller
 		}
 		else
 		{
-            
+			$data['sales_location']=$this->session->userdata('sales_location');
 			$data['table_headers'] = get_sales_manage_table_headers();
-            
-            $sale = get_instance()->Sale;
-			$data['filters'] =$sale->get_payment_types();
+			$data['filters'] = array(
+				//'only_mpesa' => $this->lang->line('sales_mpesa_filter'),
+				'only_cash' => $this->lang->line('sales_cash_filter'),
+				'only_due' => $this->lang->line('sales_due_filter'),
+				'only_check' => $this->lang->line('sales_check_filter'),
+				'only_creditcard' => $this->lang->line('sales_credit_filter'),
+				'only_invoices' => $this->lang->line('sales_invoice_filter'));
+				
 
 			$this->load->view('sales/manage', $data);
 		}
@@ -56,26 +61,31 @@ class Sales extends Secure_Controller
 		$offset = $this->input->get('offset');
 		$sort = $this->input->get('sort');
 		$order = $this->input->get('order');
+		$location_id=($this->session->has_userdata('sales_location') || !empty($sales_location))? $this->session->userdata('sales_location'):'all';
 
 		$filters = array('sale_type' => 'all',
-						 'location_id' => 'all',
-						 'start_date' => $this->input->get('start_date'),
-						 'end_date' => $this->input->get('end_date'),
-						 'only_cash' => FALSE,
-						 'only_due' => FALSE,
-						 'only_check' => FALSE,
-						 'only_creditcard' => FALSE,
-						 'only_invoices' => $this->config->item('invoice_enable') && $this->input->get('only_invoices'),
-						 'is_valid_receipt' => $this->Sale->is_valid_receipt($search));
+			'location_id' => $location_id,
+			'start_date' => $this->input->get('start_date'),
+			'end_date' => $this->input->get('end_date'),
+			'only_cash' => FALSE,
+			'only_due' => FALSE,
+			'only_check' => FALSE,
+			'only_creditcard' => FALSE,
+			'only_invoices' => $this->config->item('invoice_enable') && $this->input->get('only_invoices'),
+			'is_valid_receipt' => $this->Sale->is_valid_receipt($search));
 
+		//$filters['location_id']=($this->session->has_userdata('sales_location') || !empty($sales_location))? $this->session->userdata('sales_location'):'all';
 		// check if any filter is set in the multiselect dropdown
+		//$filters['location_id']=$location_id;
 		$filledup = array_fill_keys($this->input->get('filters'), TRUE);
 		$filters = array_merge($filters, $filledup);
 
 		$sales = $this->Sale->search($search, $filters, $limit, $offset, $sort, $order);
+
+
 		$total_rows = $this->Sale->get_found_rows($search, $filters);
 		$payments = $this->Sale->get_payments_summary($search, $filters);
-		$payment_summary = $this->xss_clean(get_sales_manage_payments_summary($payments));
+		$payment_summary =null;// $this->xss_clean(get_sales_manage_payments_summary($payments));
 
 		$data_rows = array();
 		foreach($sales->result() as $sale)
@@ -83,7 +93,7 @@ class Sales extends Secure_Controller
 			$data_rows[] = $this->xss_clean(get_sale_data_row($sale));
 		}
 
-		if($total_rows > 0)
+		if($total_rows >0)
 		{
 			$data_rows[] = $this->xss_clean(get_sale_data_last_row($sales));
 		}

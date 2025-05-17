@@ -25,7 +25,35 @@ class Item extends CI_Model
 
 		return FALSE;
 	}
+public function get_item_location_price($item_id,$location_id)
+	{
+		$price=0;
+		$this->db->select('selling_price');
+		$this->db->where('item_id', $item_id);
+		$this->db->where('location_id', $location_id);
+		$query = $this->db->get('item_quantities');
 
+		if ($query->num_rows() > 0 && $query->row()->selling_price!=0) {
+			// If a row is found, return the price
+			//$row = $query->row();
+			return $query->row()->selling_price;
+
+		}
+		else //return the default price set
+		{
+			$this->db->select('unit_price');
+			$this->db->where('item_id', $item_id);
+			$items_query = $this->db->get('items');
+
+			if ($items_query->num_rows() > 0){
+				// If a row is found, return the price
+				//$item_row = $items_query->row();
+			return $items_query->row()->unit_price;
+			}
+		}
+
+		return $price;
+	}
 	/*
 	Determines if a given item_number exists
 	*/
@@ -225,6 +253,7 @@ class Item extends CI_Model
 		return $this->db->get();
 	}
 
+
 	/*
 	Returns all the items
 	*/
@@ -374,6 +403,7 @@ class Item extends CI_Model
 	*/
 	public function save(&$item_data, $item_id = FALSE)
 	{
+	  //Add New item
 		if(!$item_id || !$this->exists($item_id, TRUE))
 		{
 			if($this->db->insert('items', $item_data))
@@ -870,6 +900,23 @@ class Item extends CI_Model
 		foreach($this->db->get()->result() as $row)
 		{
 			$suggestions[] = array('label' => $row->category);
+		}
+
+		return $suggestions;
+	}
+	
+	public function get_item_name_suggestions($search)
+	{
+		$suggestions = [];
+		$this->db->distinct();
+		$this->db->select('name');
+		$this->db->from('items');
+		$this->db->like('name', $search);
+		$this->db->where('deleted', 0);
+		$this->db->order_by('name', 'asc');
+		foreach($this->db->get()->result() as $row)
+		{
+			$suggestions[] = array('label' => $row->name);
 		}
 
 		return $suggestions;

@@ -29,7 +29,12 @@
 				<?php echo form_hidden('supplier_id', $selected_supplier_id);?>
 			</div>
 		</div>
-
+		<div class="form-group form-group-sm">
+			<?php echo form_label($this->lang->line('sales_payment'), 'sales_payment', array('class'=>'control-label col-xs-3')); ?>
+			<div class='col-xs-8'>
+				<?php echo form_dropdown('payment_type', $payment_options, $receiving_info['payment_type'], 'id="payment_type" class="form-control"');?>
+			</div>
+		</div>
 		<div class="form-group form-group-sm">
 			<?php echo form_label($this->lang->line('receivings_reference'), 'reference', array('class'=>'control-label col-xs-3')); ?>
 			<div class='col-xs-8'>

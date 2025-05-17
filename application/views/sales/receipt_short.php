@@ -15,7 +15,7 @@
 		if($this->config->item('receipt_show_company_name'))
 		{
 		?>
-			<div id="company_name"><?php echo $this->config->item('company'); ?></div>
+			<div id="company_name"><?php echo $this->Stock_location->get_location_name($this->sale_lib->get_sale_location()); ?></div>
 		<?php
 		}
 		?>

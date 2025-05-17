@@ -363,6 +363,8 @@ Get the html data row for the item
 function get_item_data_row($item)
 {
 	$CI =& get_instance();
+	$CI->load->model('Item');
+	$loc=$CI->item_lib->get_item_location();
 
 	if($CI->config->item('use_destination_based_tax') == '1')
 	{
@@ -426,7 +428,7 @@ function get_item_data_row($item)
 		'category' => $item->category,
 		'company_name' => $item->company_name,
 		'cost_price' => to_currency($item->cost_price),
-		'unit_price' => to_currency($item->unit_price),
+	    'unit_price' => to_currency($CI->Item->get_item_location_price($item->item_id,$loc)),
 		'quantity' => to_quantity_decimals($item->quantity),
 		'tax_percents' => !$tax_percents ? '-' : $tax_percents,
 		'item_pic' => $image

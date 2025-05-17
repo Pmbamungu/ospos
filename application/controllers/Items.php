@@ -9,6 +9,8 @@ class Items extends Secure_Controller
 		parent::__construct('items');
 
 		$this->load->library('item_lib');
+
+		$this->load->library('Item');
 	}
 
 	public function index()
@@ -150,6 +152,15 @@ class Items extends Secure_Controller
 		echo json_encode($suggestions);
 	}
 
+/*
+	 Gives search suggestions based on what is being searched for
+	 */
+	public function suggest_item()
+	{
+         $suggestions = $this->xss_clean($this->Item->get_item_name_suggestions($this->input->get('term')));
+
+		echo json_encode($suggestions);
+	}
 	/*
 	 Gives search suggestions based on what is being searched for
 	 */
@@ -170,6 +181,11 @@ class Items extends Secure_Controller
 		echo json_encode($suggestions);
 	}
 
+
+	/*public function get_item_location_price($item_id,$location_id)
+	{
+		$this->Item->get_item_location_price($item_id, $location_id);
+	}*/
 	public function get_row($item_ids)
 	{
 		$item_infos = $this->Item->get_multiple_info(explode(':', $item_ids), $this->item_lib->get_item_location());
@@ -180,13 +196,13 @@ class Items extends Secure_Controller
 		{
 			$result[$item_info->item_id] = $this->xss_clean(get_item_data_row($item_info));
 		}
-
 		echo json_encode($result);
 	}
 
 	public function view($item_id = NEW_ITEM)
 	{
-		if($item_id === NEW_ITEM)
+        global $CI;
+        if($item_id === NEW_ITEM)
 		{
 			$data = [];
 		}
@@ -339,10 +355,10 @@ class Items extends Secure_Controller
 		foreach($stock_locations as $location)
 		{
 			$location = $this->xss_clean($location);
-
+            $selling_price=$CI->Item->get_item_location_price($item_id,$location['location_id']);
 			$quantity = $this->xss_clean($this->Item_quantity->get_item_quantity($item_id, $location['location_id'])->quantity);
 			$quantity = ($item_id === NEW_ITEM) ? 0 : $quantity;
-			$location_array[$location['location_id']] = array('location_name' => $location['location_name'], 'quantity' => $quantity);
+			$location_array[$location['location_id']] = array('location_name' => $location['location_name'], 'quantity' => $quantity,'selling_price' => $selling_price);
 			$data['stock_locations'] = $location_array;
 		}
 
@@ -511,6 +527,7 @@ class Items extends Secure_Controller
 
 		$default_pack_name = $this->lang->line('items_default_pack_name');
 
+
 		//Save item data
 		$item_data = array(
 			'name' => $this->input->post('name'),
@@ -524,6 +541,7 @@ class Items extends Secure_Controller
 			'unit_price' => parse_decimals($this->input->post('unit_price')),
 			'reorder_level' => parse_quantity($this->input->post('reorder_level')),
 			'receiving_quantity' => $receiving_quantity,
+			'sale_by' => $this->input->post('sale_by'),
 			'allow_alt_description' => $this->input->post('allow_alt_description') !== NULL,
 			'is_serialized' => $this->input->post('is_serialized') !== NULL,
 			'qty_per_pack' => $this->input->post('qty_per_pack') === NULL ? 1 : $this->input->post('qty_per_pack'),
@@ -598,24 +616,32 @@ class Items extends Secure_Controller
 
 			//Save item quantity
 			$stock_locations = $this->Stock_location->get_undeleted_all()->result_array();
+
 			foreach($stock_locations as $location)
 			{
 				$updated_quantity = parse_quantity($this->input->post('quantity_' . $location['location_id']));
+				$updated_selling_price =parse_decimals($this->input->post('sellingprice_'.$location['location_id']));
 
 				if($item_data['item_type'] == ITEM_TEMP)
 				{
 					$updated_quantity = 0;
+					$updated_selling_price=0;
 				}
 
 				$location_detail = array(
 						'item_id' => $item_id,
 						'location_id' => $location['location_id'],
-						'quantity' => $updated_quantity);
+						'quantity' =>  $updated_quantity,
+					 'selling_price' => $updated_selling_price
+				);
 
 				$item_quantity = $this->Item_quantity->get_item_quantity($item_id, $location['location_id']);
+				$item_price = $this->Item_quantity->get_item_price($item_id, $location['location_id']);
 
-				if($item_quantity->quantity != $updated_quantity || $new_item)
+				$location_detail['selling_price'] = $updated_selling_price;
+				if($item_quantity->quantity != $updated_quantity || $item_price->selling_price != $updated_selling_price || $new_item)
 				{
+					$location_detail['selling_price'] = $updated_selling_price;
 					$success &= $this->Item_quantity->save($location_detail, $item_id, $location['location_id']);
 
 					$inv_data = array(
@@ -628,6 +654,9 @@ class Items extends Secure_Controller
 					);
 
 					$success &= $this->Inventory->insert($inv_data);
+				}else{
+					$location_detail['selling_price'] = $updated_selling_price;
+					$success &= $this->Item_quantity->save($location_detail, $item_id, $location['location_id']);
 				}
 			}
 
@@ -989,7 +1018,7 @@ class Items extends Secure_Controller
 
 		if(!$is_update)
 		{
-			$item_data['cost_price'] = empty($item_data['cost_price']) ? 0 : $item_data['cost_price'];	//Allow for zero wholesale price
+			$item_data['cost_price'] = empty($item_data['cost_price']) ? 0 : $item_data['cost_price'];	//Allow for zero Buying Price
 		}
 		else
 		{
@@ -1153,6 +1182,7 @@ class Items extends Secure_Controller
 			if(!empty($row["location_$location_name"]) || $row["location_$location_name"] === '0')
 			{
 				$item_quantity_data['quantity'] = $row["location_$location_name"];
+				$item_quantity_data['selling_price'] = $row["selling_price_at_".$location_name];
 				$this->Item_quantity->save($item_quantity_data, $item_data['item_id'], $location_id);
 
 				$csv_data['trans_inventory'] = $row["location_$location_name"];
@@ -1165,6 +1195,7 @@ class Items extends Secure_Controller
 			else
 			{
 				$item_quantity_data['quantity'] = 0;
+				$item_quantity_data['selling_price'] = 0;
 				$this->Item_quantity->save($item_quantity_data, $item_data['item_id'], $location_id);
 
 				$csv_data['trans_inventory'] = 0;

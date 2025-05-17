@@ -249,15 +249,52 @@ function get_payment_options()
 {
 	$config = get_instance()->config;
 	$lang = get_instance()->lang;
-	
-	
-	$sale = get_instance()->Sale;
 
 	$payments = [];
 
-	$payments=$sale->get_payment_types();
-	
-	
+
+	if($config->item('payment_options_order') == 'debitcreditcash')
+	{
+		$payments[$lang->line('sales_debit')] = $lang->line('sales_debit');
+		$payments[$lang->line('sales_credit')] = $lang->line('sales_credit');
+		$payments[$lang->line('sales_cash')] = $lang->line('sales_cash');
+	}
+	elseif($config->item('payment_options_order') == 'debitcashcredit')
+	{
+		$payments[$lang->line('sales_debit')] = $lang->line('sales_debit');
+		$payments[$lang->line('sales_cash')] = $lang->line('sales_cash');
+		$payments[$lang->line('sales_credit')] = $lang->line('sales_credit');
+	}
+	elseif($config->item('payment_options_order') == 'creditdebitcash')
+	{
+		$payments[$lang->line('sales_credit')] = $lang->line('sales_credit');
+		$payments[$lang->line('sales_debit')] = $lang->line('sales_debit');
+		$payments[$lang->line('sales_cash')] = $lang->line('sales_cash');
+	}
+	elseif($config->item('payment_options_order') == 'creditcashdebit')
+	{
+		$payments[$lang->line('sales_credit')] = $lang->line('sales_credit');
+		$payments[$lang->line('sales_cash')] = $lang->line('sales_cash');
+		$payments[$lang->line('sales_debit')] = $lang->line('sales_debit');
+	}
+	else // default: if($config->item('payment_options_order') == 'cashdebitcredit')
+	{
+		$payments[$lang->line('sales_cash')] = $lang->line('sales_cash');
+		$payments[$lang->line('sales_debit')] = $lang->line('sales_debit');
+		$payments[$lang->line('sales_credit')] = $lang->line('sales_credit');
+		$payments[$lang->line('sales_mpesa')] = $lang->line('sales_mpesa');
+	}
+
+	$payments[$lang->line('sales_due')] = $lang->line('sales_due');
+	$payments[$lang->line('sales_check')] = $lang->line('sales_check');
+	$payments[$lang->line('sales_mpesa')] = $lang->line('sales_mpesa');
+
+	// If India (list of country codes include India) then include Unified Payment Interface
+	if (stripos(get_instance()->config->item('country_codes'), 'IN') !== false)
+	{
+		$payments[$lang->line('sales_upi')] = $lang->line('sales_upi');
+	}
+
 	return $payments;
 }
 
