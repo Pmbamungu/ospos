@@ -143,18 +143,18 @@ CREATE TABLE `ospos_payment_types` (
 --
 -- Dumping data for table `ospos_payment_types`
 --
-insert  into `ospos_payment_types`(`id`,`pay_mode`,`description`,`status`) values 
-(2,'Cash','Cash',1),
-(3,'Credit Card','Credit Card',1),
-(4,'Debit Card','Debit Card',1),
-(5,'Mpesa(Till)','Mpesa(Till)',1),
-(6,'Mpesa(Paybill)','Mpesa(Paybill)',1),
-(7,'Mpesa(Send Money)','Mpesa(Send Money)',1),
-(8,'Cheque','Cheque',1),
-(9,'Gift Card','Gift Card',1),
-(10,'Reward Points','Reward Points',1),
-(5,'Mpesa(Withdraw)','Mpesa(Withdraw)',1),
-(11,'Due','Due',1);
+insert  into `ospos_payment_types`(`pay_mode`,`description`,`status`) values 
+('Cash','Cash',1),
+('Credit Card','Credit Card',1),
+('Debit Card','Debit Card',1),
+('Mpesa-Till','Mpesa-Till',1),
+('Mpesa-Paybill','Mpesa-Paybill',1),
+('Mpesa-Send Money','Mpesa-Send Money',1),
+('Cheque','Cheque',1),
+('Gift Card','Gift Card',1),
+('Reward Points','Reward Points',1),
+('Mpesa-Agent','Mpesa-Agent',1),
+('Due','Due',1);
 
 -- --------------------------------------------------------
 
